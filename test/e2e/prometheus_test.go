@@ -13,7 +13,7 @@ import (
 
 func testPrometheus(t *testing.T) {
 	testCtx, err := NewTestContext(t)
-	require.noError(t, err)
+	require.NoError(t, err)
 
 	// check that service exists
 	_, err = testCtx.kubeclient.CoreV1().Services("openshift-windows-machine-config-operator").Get(context.TODO(), "windows-machine-config-operator-metrics", metav1.GetOptions{})
