@@ -137,6 +137,10 @@ func (nc *nodeConfig) Configure() error {
 		return errors.Wrap(err, "configuring node network failed")
 	}
 
+	// Create and update endpoints
+	// ConfigurePrometheus()
+	if err := nc.configurePrometheus(); err != nil : errors.Wrap(err, "configuring Prometheus failed")
+
 	// Now that the node has been fully configured, add the version annotation to signify that the node
 	// was successfully configured by this version of WMCO
 	// populate node object in nodeConfig once more
@@ -188,6 +192,8 @@ func (nc *nodeConfig) configureNetwork() error {
 	}
 	return nil
 }
+
+// configure metrics function
 
 // addVersionAnnotation adds the version annotation to nc.node
 func (nc *nodeConfig) addVersionAnnotation() {

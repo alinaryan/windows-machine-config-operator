@@ -35,9 +35,10 @@ import (
 
 // Change below variables to serve metrics on different host or port.
 var (
-	metricsHost               = "0.0.0.0"
-	metricsPort         int32 = 8383
-	operatorMetricsPort int32 = 8686
+	metricsHost               	  = "0.0.0.0"
+	metricsPort         	int32 = 8383
+	operatorMetricsPort 	int32 = 8686
+	prometheusMetricsPort   int32 = 9182
 )
 var log = logf.Log.WithName("cmd")
 
@@ -206,6 +207,7 @@ func addMetrics(ctx context.Context, cfg *rest.Config, namespace string) {
 	servicePorts := []v1.ServicePort{
 		{Port: metricsPort, Name: metrics.OperatorPortName, Protocol: v1.ProtocolTCP, TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: metricsPort}},
 		{Port: operatorMetricsPort, Name: metrics.CRPortName, Protocol: v1.ProtocolTCP, TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: operatorMetricsPort}},
+		{Port: prometheusMetricsPort, Name: metrics.CRPortName, Protocol: v1.ProtocolTCP, TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: prometheusMetricsPort}},
 	}
 
 	// Create Service object to expose the metrics port(s).
