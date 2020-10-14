@@ -4,6 +4,6 @@ import(
 	v1 "k8s.io/api/core/v1"
 )
 
-// given a node, find its ip
-// create an endpoint object
-// service in main.go
+// 1. given a node, find its ip
+// 2. create an endpoint object
+// 3. service in main.go
