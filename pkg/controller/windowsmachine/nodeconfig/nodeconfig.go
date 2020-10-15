@@ -136,9 +136,10 @@ func (nc *nodeConfig) Configure() error {
 	}
 	// Now that basic kubelet configuration is complete, configure networking in the node
 	if err := nc.configureNetwork(); err != nil {
-		return errors.Wrap(err, "configuring node network failed")
+		errors.Wrap(err, "configuring node network failed")
 	}
 	// Create and update endpoints
+
 	// ConfigurePrometheus()
 	if err := nc.configurePrometheus(); err != nil {
 		return errors.Wrap(err, "configuring Prometheus failed")
