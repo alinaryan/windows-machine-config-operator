@@ -2,6 +2,7 @@ package nodeconfig
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strings"
 
@@ -134,10 +135,12 @@ func (nc *nodeConfig) Configure() error {
 	}
 	// Now that basic kubelet configuration is complete, configure networking in the node
 	if err := nc.configureNetwork(); err != nil {
-		return errors.Wrap(err, "configuring node network failed")
+		errors.Wrap(err, "configuring node network failed")
 	}
 	// Create and update endpoints
-	if err := nc.configurePrometheus(); err != nil : errors.Wrap(err, "configuring Prometheus failed")
+	if err := nc.configurePrometheus(); err != nil {
+		errors.Wrap(err, "configuring Prometheus failed")
+	}
 	// Now that the node has been fully configured, add the version annotation to signify that the node
 	// was successfully configured by this version of WMCO
 	// populate node object in nodeConfig once more
@@ -193,7 +196,40 @@ func (nc *nodeConfig) configureNetwork() error {
 // configurePrometheus configures Prometheus monitoring on Windows node
 func (nc *nodeConfig) configurePrometheus() error {
 	// given a node, find its ip
-	// create an endpoint object
+	if err := nc.getNode(); err != nil {
+		errors.Wrapf(err, "error getting Node IP for VM %s", nc.ID())
+	}
+	// TODO: create an endpoint object
+}
+
+// getNode returns a pointer to the node object associated with the internal IP provided
+func (nc *nodeConfig) getNode(internalIP string) (*v1.Node, error) {
+	var matchedNode *v1.Node
+
+	nodes, err := nc.k8sclientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{node.openshift.io/os_id=Windows})
+	if err != nil {
+		return nil, fmt.Errorf("could not get list of nodes: %v", err)
+	}
+	if len(nodes.Items) == 0 {
+		return nil, fmt.Errorf("no nodes found")
+	}
+
+	// Find the node that has the given IP
+	for _, node := range nodes.Items {
+		for _, address := range node.Status.Addresses {
+			if address.Type == "InternalIP" && address.Address == internalIP {
+				matchedNode = &node
+				break
+			}
+		}
+		if matchedNode != nil {
+			break
+		}
+	}
+	if matchedNode == nil {
+		return nil, fmt.Errorf("could not find node with IP: %s", internalIP)
+	}
+	return matchedNode, nil
 }
 
 // addVersionAnnotation adds the version annotation to nc.node
