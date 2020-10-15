@@ -35,7 +35,7 @@ import (
 
 // Change below variables to serve metrics on different host or port.
 var (
-	metricsHost               	  = "0.0.0.0"
+	metricsHost				= "0.0.0.0"
 	metricsPort         	int32 = 8383
 	operatorMetricsPort 	int32 = 8686
 	prometheusMetricsPort   int32 = 9182
@@ -46,7 +46,7 @@ const (
 	// baseK8sVersion specifies the base k8s version supported by the operator. (For eg. All versions in the format
 	// 1.19.x are supported for baseK8sVersion 1.18)
 	baseK8sVersion = "1.19"
-	// Metrics Port name
+	// metricsPortName specifies the port name used for Prometheus monitoring
 	metricsPortName = "windows-metrics"
 )
 
