@@ -138,7 +138,6 @@ func (nc *nodeConfig) Configure() error {
 	if err := nc.configureNetwork(); err != nil {
 		return errors.Wrap(err, "configuring node network failed")
 	}
-
 	// Create and update endpoints
 	// ConfigurePrometheus()
 	if err := nc.configurePrometheus(); err != nil {
@@ -231,7 +230,6 @@ func (nc *nodeConfig) getIPAddress() ([]v1.EndpointAddress, error) {
 	}
 	// return list and error
 	return nodeIPAddress, nil
-
 }
 
 // addVersionAnnotation adds the version annotation to nc.node
