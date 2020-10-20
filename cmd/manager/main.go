@@ -35,9 +35,10 @@ import (
 
 // Change below variables to serve metrics on different host or port.
 var (
-	metricsHost               = "0.0.0.0"
-	metricsPort         int32 = 8383
-	operatorMetricsPort int32 = 8686
+	metricsHost                 = "0.0.0.0"
+	metricsPort           int32 = 8383
+	operatorMetricsPort   int32 = 8686
+	prometheusMetricsPort int32 = 9182
 )
 var log = logf.Log.WithName("cmd")
 
@@ -45,6 +46,8 @@ const (
 	// baseK8sVersion specifies the base k8s version supported by the operator. (For eg. All versions in the format
 	// 1.19.x are supported for baseK8sVersion 1.18)
 	baseK8sVersion = "1.19"
+	// metricsPortName specifies the port name used for Prometheus monitoring
+	metricsPortName = "windows-metrics"
 )
 
 // clusterConfig contains information specific to cluster configuration
@@ -206,6 +209,7 @@ func addMetrics(ctx context.Context, cfg *rest.Config, namespace string) {
 	servicePorts := []v1.ServicePort{
 		{Port: metricsPort, Name: metrics.OperatorPortName, Protocol: v1.ProtocolTCP, TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: metricsPort}},
 		{Port: operatorMetricsPort, Name: metrics.CRPortName, Protocol: v1.ProtocolTCP, TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: operatorMetricsPort}},
+		{Port: prometheusMetricsPort, Name: metricsPortName, Protocol: v1.ProtocolTCP, TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: prometheusMetricsPort}},
 	}
 
 	// Create Service object to expose the metrics port(s).

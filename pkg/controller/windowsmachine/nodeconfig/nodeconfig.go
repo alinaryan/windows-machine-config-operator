@@ -2,6 +2,7 @@ package nodeconfig
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strings"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 	"k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -189,6 +191,43 @@ func (nc *nodeConfig) configureNetwork() error {
 	return nil
 }
 
+// Configure Windows metrics exporter service
+func (nc *nodeConfig) configureMetrics() error {
+	if err := nc.configurePrometheus(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// getIPAddress returns a list of the Windows node IP Addresses to be used in the endpoint
+func (nc *nodeConfig) getIPAddress() ([]v1.EndpointAddress, error) {
+
+	nodes, err := nc.k8sclientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{LabelSelector: WindowsOSLabel})
+
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get list of nodes: %v")
+	}
+
+	// an empty list to store node IP addresses
+	var nodeIPAddress []v1.EndpointAddress
+	// loops through nodes
+
+	for _, node := range nodes.Items {
+		for _, address := range node.Status.Addresses {
+
+			if address.Type == "InternalIP" && address.Address != "" {
+				// add IP address address.Address
+				// append to list
+				nodeIPAddress = append(nodeIPAddress, v1.EndpointAddress{IP: address.Address})
+				break
+			}
+		}
+	}
+	// return list and error
+	return nodeIPAddress, nil
+
+}
+
 // addVersionAnnotation adds the version annotation to nc.node
 func (nc *nodeConfig) addVersionAnnotation() {
 	nc.node.Annotations[VersionAnnotation] = version.Get()
@@ -273,4 +312,65 @@ func (nc *nodeConfig) configureCNI() error {
 func getInstanceIDfromProviderID(providerID string) string {
 	providerTokens := strings.Split(providerID, "/")
 	return providerTokens[len(providerTokens)-1]
+}
+
+// configurePrometheus configures Prometheus monitoring on Windows node
+func (nc *nodeConfig) configurePrometheus() error {
+	// check if we can get IP address
+	windowsIPList, err := nc.getIPAddress()
+	if err != nil {
+		return fmt.Errorf("could not get IP address")
+	}
+
+	if err := nc.updateMetricsEndpoint(windowsIPList); err != nil {
+		return err
+	}
+	return nil
+}
+
+// updateMetricsEndpoint upates the endpoint object with the new list of ip addresses from the Windows nodes.
+// It creates an endpoint object if the object is not found.
+func (nc *nodeConfig) updateMetricsEndpoint(ipAddresses []v1.EndpointAddress) error {
+
+	endpointsSpec := &v1.Endpoints{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "windows-machine-config-operator-metrics",
+			Namespace: "openshift-windows-machine-config-operator",
+			Labels: map[string]string{
+				"name": "windows-machine-config-operator"},
+		},
+		Subsets: []v1.EndpointSubset{
+			{
+
+				Addresses: ipAddresses,
+				Ports: []v1.EndpointPort{
+					{
+						Name:        "windows-metrics",
+						Port:        9182,
+						Protocol:    v1.ProtocolTCP,
+						AppProtocol: nil,
+					},
+				},
+			},
+		},
+	}
+	// Retrieve endpoints object
+	_, err := nc.k8sclientset.CoreV1().Endpoints("openshift-windows-machine-config-operator").Get(context.TODO(), "windows-machine-config-operator-metrics", metav1.GetOptions{})
+
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			// Create Endpoints object if not present
+			_, err := nc.k8sclientset.CoreV1().Endpoints("openshift-windows-machine-config-operator").Create(context.TODO(), endpointsSpec, metav1.CreateOptions{})
+			if err != nil {
+				return errors.Wrap(err, "error creating Endpoints object")
+			}
+		}
+		return errors.Wrap(err, "error getting Endpoints object")
+	}
+
+	_, err = nc.k8sclientset.CoreV1().Endpoints("openshift-windows-machine-config-operator").Update(context.TODO(), endpointsSpec, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "error updating Endpoints object")
+	}
+	return nil
 }
