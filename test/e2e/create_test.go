@@ -38,6 +38,7 @@ func creationTestSuite(t *testing.T) {
 		return
 	}
 	t.Run("Network validation", testNetwork)
+	t.Run("Metrics configuration validation", testPrometheus)
 	// The label is not actually added by WMCO however we would like to validate if the Machine Api is properly
 	// adding the worker label, if it was specified in the MachineSet. The MachineSet created in the test suite has
 	// the worker label

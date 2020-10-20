@@ -4,6 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"os"
 	"strings"
 
@@ -15,7 +17,6 @@ import (
 	wkl "github.com/openshift/windows-machine-config-operator/pkg/controller/wellknownlocations"
 	"github.com/openshift/windows-machine-config-operator/version"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
-	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	"github.com/operator-framework/operator-sdk/pkg/metrics"
@@ -23,6 +24,7 @@ import (
 	"github.com/spf13/pflag"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	k8sclient "k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -35,9 +37,8 @@ import (
 
 // Change below variables to serve metrics on different host or port.
 var (
-	metricsHost               = "0.0.0.0"
-	metricsPort         int32 = 8383
-	operatorMetricsPort int32 = 8686
+	metricsHost       = "0.0.0.0"
+	metricsPort int32 = 9182
 )
 var log = logf.Log.WithName("cmd")
 
@@ -45,6 +46,8 @@ const (
 	// baseK8sVersion specifies the base k8s version supported by the operator. (For eg. All versions in the format
 	// 1.19.x are supported for baseK8sVersion 1.18)
 	baseK8sVersion = "1.19"
+	// metricsPortName specifies the port name used for Prometheus monitoring
+	metricsPortName = "metrics"
 )
 
 // clusterConfig contains information specific to cluster configuration
@@ -194,24 +197,29 @@ func main() {
 // addMetrics will create the Services and Service Monitors to allow the operator export the metrics by using
 // the Prometheus operator
 func addMetrics(ctx context.Context, cfg *rest.Config, namespace string) {
-	if err := serveCRMetrics(cfg); err != nil {
-		if errors.Cause(err) == k8sutil.ErrRunLocal {
-			log.Info("skipping CR metrics server creation; not running in a cluster.")
-			return
-		}
-		log.Info("could not generate and serve custom resource metrics", "error", err.Error())
-	}
 
 	// Add to the below struct any other metrics ports you want to expose.
 	servicePorts := []v1.ServicePort{
-		{Port: metricsPort, Name: metrics.OperatorPortName, Protocol: v1.ProtocolTCP, TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: metricsPort}},
-		{Port: operatorMetricsPort, Name: metrics.CRPortName, Protocol: v1.ProtocolTCP, TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: operatorMetricsPort}},
+		{Port: metricsPort, Name: metricsPortName, Protocol: v1.ProtocolTCP, TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: metricsPort}},
 	}
 
 	// Create Service object to expose the metrics port(s).
 	service, err := metrics.CreateMetricsService(ctx, cfg, servicePorts)
 	if err != nil {
 		log.Info("could not create metrics Service", "error", err.Error())
+	}
+
+	oclient, err := k8sclient.NewForConfig(cfg)
+	if err != nil {
+		log.Info("could not create config clientset", err)
+	}
+
+	// Remove selector from Metrics Service to avoid reverting changes in the Endpoints object.
+	patchData := fmt.Sprintf(`{"spec":{"selector": null }}`)
+	service, err = oclient.CoreV1().Services(namespace).Patch(ctx, service.Name, types.MergePatchType, []byte(patchData), metav1.PatchOptions{})
+
+	if err != nil {
+		log.Info("error patching")
 	}
 
 	// CreateServiceMonitors will automatically create the prometheus-operator ServiceMonitor resources
@@ -226,30 +234,6 @@ func addMetrics(ctx context.Context, cfg *rest.Config, namespace string) {
 			log.Info("install prometheus-operator in your cluster to create ServiceMonitor objects", "error", err.Error())
 		}
 	}
-}
-
-// serveCRMetrics gets the Operator/CustomResource GVKs and generates metrics based on those types.
-// It serves those metrics on "http://metricsHost:operatorMetricsPort".
-func serveCRMetrics(cfg *rest.Config) error {
-	// Below function returns filtered operator/CustomResource specific GVKs.
-	// For more control override the below GVK list with your own custom logic.
-	filteredGVK, err := k8sutil.GetGVKsFromAddToScheme(apis.AddToScheme)
-	if err != nil {
-		return err
-	}
-	// Get the namespace the operator is currently deployed in.
-	operatorNs, err := k8sutil.GetOperatorNamespace()
-	if err != nil {
-		return err
-	}
-	// To generate metrics in other namespaces, add the values below.
-	ns := []string{operatorNs}
-	// Generate and serve custom resource specific metrics.
-	err = kubemetrics.GenerateAndServeCRMetrics(cfg, ns, filteredGVK, metricsHost, operatorMetricsPort)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // checkIfRequiredFilesExist checks for the existence of required files and binaries before starting WMCO

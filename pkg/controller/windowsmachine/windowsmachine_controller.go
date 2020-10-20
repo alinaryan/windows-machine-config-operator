@@ -307,6 +307,14 @@ func (r *ReconcileWindowsMachine) Reconcile(request reconcile.Request) (reconcil
 				return reconcile.Result{}, nil
 			}
 			// version annotation exists with a valid value, node is fully configured, do nothing.
+
+			// When the operator pod is restarted, the metrics Service is recreated reverting the changes in the Endpoints object, even when
+			// the Windows Nodes are fully configured. The reason is selector in the Metrics Service should be removed
+			// before creation of Endpoints, to avoid losing the updates. Configuring prometheus again, will allow
+			// the Endpoints object to be updated.
+			if err := nodeconfig.ConfigurePrometheus(r.k8sclientset); err != nil {
+				return reconcile.Result{}, err
+			}
 			return reconcile.Result{}, nil
 		}
 	} else if *machine.Status.Phase != provisionedPhase {
