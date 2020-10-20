@@ -193,20 +193,11 @@ func (nc *nodeConfig) configureNetwork() error {
 	return nil
 }
 
-// configurePrometheus configures Prometheus monitoring on Windows node
-func (nc *nodeConfig) configurePrometheus() error {
-	// given a node, find its ip
-	if err := nc.getNode(); err != nil {
-		errors.Wrapf(err, "error getting Node IP for VM %s", nc.ID())
-	}
-	// TODO: create an endpoint object
-}
-
 // getNode returns a pointer to the node object associated with the internal IP provided
-func (nc *nodeConfig) getNode(internalIP string) (*v1.Node, error) {
-	var matchedNode *v1.Node
+func (nc *nodeConfig) getIPAddress() ([]string, error) {
 
-	nodes, err := nc.k8sclientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{node.openshift.io/os_id=Windows})
+	// get nodes
+	nodes, err := nc.k8sclientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{LabelSelector: WindowsOSLabel})
 	if err != nil {
 		return nil, fmt.Errorf("could not get list of nodes: %v", err)
 	}
@@ -215,21 +206,25 @@ func (nc *nodeConfig) getNode(internalIP string) (*v1.Node, error) {
 	}
 
 	// Find the node that has the given IP
+	// return the IP of the given node
+
+	// an empty list to store node IP addresses
+	nodeIPAddress := []string{}
+	// loops through nodes
 	for _, node := range nodes.Items {
+		// loops through each nodes address
 		for _, address := range node.Status.Addresses {
-			if address.Type == "InternalIP" && address.Address == internalIP {
-				matchedNode = &node
+
+			if address.Type == "InternalIP" && address.Address != ""{
+				// add IP address address.Address
+				// append to list
+				nodeIPAddress = append(nodeIPAddress, address.Address)
 				break
 			}
 		}
-		if matchedNode != nil {
-			break
-		}
 	}
-	if matchedNode == nil {
-		return nil, fmt.Errorf("could not find node with IP: %s", internalIP)
-	}
-	return matchedNode, nil
+		// return list and error
+		return nodeIPAddress, nil
 }
 
 // addVersionAnnotation adds the version annotation to nc.node
@@ -316,4 +311,16 @@ func (nc *nodeConfig) configureCNI() error {
 func getInstanceIDfromProviderID(providerID string) string {
 	providerTokens := strings.Split(providerID, "/")
 	return providerTokens[len(providerTokens)-1]
+}
+
+// configurePrometheus configures Prometheus monitoring on Windows node
+func (nc *nodeConfig) configurePrometheus() error {
+	// given a node, find its ip
+	// check if we can get IP address
+	list, error := nc.getIPAddress()
+	if error != nil {
+		return fmt.Errorf("could not get IP address")
+	}
+	return nil
+	// TODO: create an endpoint object
 }
