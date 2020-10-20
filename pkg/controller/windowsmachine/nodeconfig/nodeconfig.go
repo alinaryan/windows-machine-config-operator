@@ -209,16 +209,14 @@ func (nc *nodeConfig) configureMetrics() error {
 func (nc *nodeConfig) getIPAddress() ([]v1.EndpointAddress, error) {
 
 	nodes, err := nc.k8sclientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{LabelSelector: WindowsOSLabel})
-
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get list of nodes: %v")
 	}
-
 	// an empty list to store node IP addresses
 	var nodeIPAddress []v1.EndpointAddress
 	// loops through nodes
-
 	for _, node := range nodes.Items {
+		// loops through each nodes address
 		for _, address := range node.Status.Addresses {
 
 			if address.Type == "InternalIP" && address.Address != "" {
