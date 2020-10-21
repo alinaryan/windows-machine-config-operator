@@ -215,8 +215,11 @@ func (nc *nodeConfig) getIPAddress() ([]v1.EndpointAddress, error) {
 	// an empty list to store node IP addresses
 	var nodeIPAddress []v1.EndpointAddress
 	// loops through nodes
+	if len(nodes.Items) == 0 {
+		return nil, fmt.Errorf("no nodes found")
+	}
+
 	for _, node := range nodes.Items {
-		// loops through each nodes address
 		for _, address := range node.Status.Addresses {
 
 			if address.Type == "InternalIP" && address.Address != "" {
