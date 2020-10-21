@@ -193,10 +193,9 @@ func (nc *nodeConfig) configureNetwork() error {
 	return nil
 }
 
-// getNode returns a pointer to the node object associated with the internal IP provided
-func (nc *nodeConfig) getIPAddress() ([]string, error) {
+// getIPAddress returns a list of the Windows node IP Addresses to be used in the endpoint
+func (nc *nodeConfig) getIPAddress() ([]v1.EndpointAddress, error) {
 
-	// get nodes
 	nodes, err := nc.k8sclientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{LabelSelector: WindowsOSLabel})
 	if err != nil {
 		return nil, fmt.Errorf("could not get list of nodes: %v", err)
@@ -205,25 +204,17 @@ func (nc *nodeConfig) getIPAddress() ([]string, error) {
 		return nil, fmt.Errorf("no nodes found")
 	}
 
-	// Find the node that has the given IP
-	// return the IP of the given node
-
 	// an empty list to store node IP addresses
-	nodeIPAddress := []string{}
-	// loops through nodes
+	var nodeIPAddress []v1.EndpointAddress
 	for _, node := range nodes.Items {
-		// loops through each nodes address
 		for _, address := range node.Status.Addresses {
 
 			if address.Type == "InternalIP" && address.Address != ""{
-				// add IP address address.Address
-				// append to list
-				nodeIPAddress = append(nodeIPAddress, address.Address)
+				nodeIPAddress = append(nodeIPAddress, v1.EndpointAddress{IP: address.Address})
 				break
 			}
 		}
 	}
-		// return list and error
 		return nodeIPAddress, nil
 }
 
@@ -315,7 +306,6 @@ func getInstanceIDfromProviderID(providerID string) string {
 
 // configurePrometheus configures Prometheus monitoring on Windows node
 func (nc *nodeConfig) configurePrometheus() error {
-	// given a node, find its ip
 	// check if we can get IP address
 	list, error := nc.getIPAddress()
 	if error != nil {
