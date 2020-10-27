@@ -225,7 +225,15 @@ func (nc *nodeConfig) getIPAddress() ([]v1.EndpointAddress, error) {
 			if address.Type == "InternalIP" && address.Address != "" {
 				// add IP address address.Address
 				// append to list
-				nodeIPAddress = append(nodeIPAddress, v1.EndpointAddress{IP: address.Address})
+				nodeIPAddress = append(nodeIPAddress, v1.EndpointAddress{
+					IP:        address.Address,
+					Hostname:  "",
+					NodeName:  nil,
+					TargetRef: &v1.ObjectReference{
+						Kind:            "Node",
+						Name:            node.Name,
+					},
+				})
 				break
 			}
 		}
