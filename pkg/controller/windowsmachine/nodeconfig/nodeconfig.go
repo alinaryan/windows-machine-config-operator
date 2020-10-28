@@ -138,7 +138,6 @@ func (nc *nodeConfig) Configure() error {
 	if err := nc.configureNetwork(); err != nil {
 		errors.Wrap(err, "configuring node network failed")
 	}
-	// Create and update endpoints
 
 	// ConfigurePrometheus()
 	if err := nc.configurePrometheus(); err != nil {
