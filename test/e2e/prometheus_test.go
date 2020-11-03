@@ -58,5 +58,6 @@ func testIfNodesPresent(windowsEndpoints *v1.Endpoints) error {
 			return errors.New("target node not found in Endpoints object ")
 		}
 	}
+
 	return nil
 }

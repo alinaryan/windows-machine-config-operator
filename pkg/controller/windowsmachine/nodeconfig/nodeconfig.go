@@ -205,17 +205,15 @@ func (nc *nodeConfig) configureMetrics() error {
 
 // getIPAddress returns a list of the Windows node IP Addresses to be used in the endpoint
 func getIPAddress(k8sclientset *kubernetes.Clientset) ([]v1.EndpointAddress, error) {
-
 	nodes, err := k8sclientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{LabelSelector: WindowsOSLabel})
-
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get list of nodes: %v")
 	}
 
 	// an empty list to store node IP addresses
 	var nodeIPAddress []v1.EndpointAddress
-	// loops through nodes
 
+	// loops through nodes
 	for _, node := range nodes.Items {
 		for _, address := range node.Status.Addresses {
 
@@ -237,7 +235,6 @@ func getIPAddress(k8sclientset *kubernetes.Clientset) ([]v1.EndpointAddress, err
 	}
 	// return list and error
 	return nodeIPAddress, nil
-
 }
 
 // addVersionAnnotation adds the version annotation to nc.node
@@ -333,10 +330,10 @@ func ConfigurePrometheus(k8sclientset *kubernetes.Clientset) error {
 	if err != nil {
 		return fmt.Errorf("could not get IP address")
 	}
-
 	if err := updateMetricsEndpoint(windowsIPList, k8sclientset); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -368,7 +365,6 @@ func updateMetricsEndpoint(ipAddresses []v1.EndpointAddress, k8sclientset *kuber
 	}
 	// Retrieve endpoints object
 	_, err := k8sclientset.CoreV1().Endpoints("openshift-windows-machine-config-operator").Get(context.TODO(), "windows-machine-config-operator-metrics", metav1.GetOptions{})
-
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			// Create Endpoints object if not present
@@ -384,5 +380,6 @@ func updateMetricsEndpoint(ipAddresses []v1.EndpointAddress, k8sclientset *kuber
 	if err != nil {
 		return errors.Wrap(err, "error updating Endpoints object")
 	}
+
 	return nil
 }

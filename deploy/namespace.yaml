@@ -4,4 +4,3 @@ metadata:
   name: openshift-windows-machine-config-operator
   labels:
     openshift.io/cluster-monitoring: "true"
-
