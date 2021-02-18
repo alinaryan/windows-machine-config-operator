@@ -97,7 +97,7 @@ func Add(ctx context.Context, cfg *rest.Config, namespace string) error {
 	// In the case of an operator restart, a previous SM object will be deleted and a new one will
 	// be created. We are deleting to ensure that the SM always exists with the correct spec. Otherwise,
 	// metrics may exhibit unexpected behavior if created by a previous version of WMCO.
-	err = mclient.ServiceMonitors(namespace).Delete(context.TODO(), windowsMetricsEndpoints, metav1.DeleteOptions{})
+	err = mclient.ServiceMonitors(namespace).Delete(context.TODO(), windowsMetricsResource, metav1.DeleteOptions{})
 	if err != nil && !apierrors.IsNotFound(err) {
 		return errors.Wrap(err, "could not delete existing ServiceMonitor object")
 	}
