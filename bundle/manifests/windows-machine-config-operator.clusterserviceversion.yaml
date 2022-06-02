@@ -13,7 +13,7 @@ metadata:
     operatorframework.io/suggested-namespace: openshift-windows-machine-config-operator
     operators.openshift.io/valid-subscription: '["Red Hat OpenShift support for Windows
       Containers"]'
-    operators.operatorframework.io/builder: operator-sdk-v1.15.0+git
+    operators.operatorframework.io/builder: operator-sdk-v1.10.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/openshift/windows-machine-config-operator
     support: Red Hat
@@ -35,7 +35,7 @@ spec:
     official support.
 
     ### Pre-requisites
-    * A Red Hat OpenShift Container Platform for Windows Containers subscription [subscription page](https://access.redhat.com/support/policy/updates/openshift#windows)
+    * A Red Hat OpenShift Container Platform for Windows Containers subscription
     * OCP 4.10 cluster running on Azure, AWS or vSphere configured with hybrid OVN Kubernetes networking
     * [WMCO prerequisites](https://docs.openshift.com/container-platform/4.10/windows_containers/understanding-windows-container-workloads.html#wmco-prerequisites__understanding-windows-container-workloads)
 
