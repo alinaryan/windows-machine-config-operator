@@ -47,10 +47,10 @@ function update_submodules_for_branch() {
   local modulelist=$3
   local remote_branch=${4:-""}
 
-  if git branch -D $new_branch; then
-    echo "Deleted branch $new_branch"
-  fi
-  git checkout $base_branch -b $new_branch
+ # if git branch -D $new_branch; then
+  #  echo "Deleted branch $new_branch"
+  #fi
+ # git checkout $base_branch -b $new_branch
 
   # Generate a commit updating each submodule
   for submodule in $modulelist; do
