@@ -50,7 +50,7 @@ function update_submodules_for_branch() {
  # if git branch -D $new_branch; then
   #  echo "Deleted branch $new_branch"
   #fi
- # git checkout $base_branch -b $new_branch
+ git checkout $base_branch -b $new_branch
 
   # Generate a commit updating each submodule
   for submodule in $modulelist; do
