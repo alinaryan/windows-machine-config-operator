@@ -8,23 +8,11 @@
 
 # Extract major version from WMCO_VERSION and map to ocp version.
 get_co_version() {
-  local COMMUNITY_VER="community-"
-
-  case ${WMCO_VERSION:0:1} in
-  7)
-    COMMUNITY_VER="${COMMUNITY_VER}4.12"
-    ;;
-  6)
-    COMMUNITY_VER="${COMMUNITY_VER}4.11"
-    ;;
-  5)
-    COMMUNITY_VER="${COMMUNITY_VER}4.10"
-    ;;
-  *)
-    exit
-    ;;
-  esac
-  echo $COMMUNITY_VER
+  local COMMUNITY_VER_MAJOR=4
+  local CONSTANT_VER=5
+  local OCP_VER=${WMCO_VERSION:0:1}
+  local COMMUNITY_VER_MINOR=$(($CONSTANT_VER+$OCP_VER))
+  local COMMUNITY_VER=community-${COMMUNITY_VER_MAJOR}-${COMMUNITY_VER_MINOR}
 }
 
 # Replace necessary fields with the yq tool.
