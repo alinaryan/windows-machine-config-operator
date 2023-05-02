@@ -17,6 +17,16 @@ error-exit() {
     exit 1
 }
 
+# Extract major version from WMCO_VERSION and map to ocp version
+get_OCP_version(){
+  local OCP_VER_MAJOR=4
+  local WMCO_VER_MAJOR=${WMCO_VERSION:0:1}
+  local DIFFERENCE=5
+  local OCP_VER_MINOR=$(($DIFFERENCE+$WMCO_VER_MAJOR))
+  local OCP_VER=$OCP_VER_MAJOR.$OCP_VER_MINOR
+  echo $OCP_VER
+}
+
 get_operator_sdk() {
   # Download the operator-sdk binary only if it is not already available
   # We do not validate the version of operator-sdk if it is available already
