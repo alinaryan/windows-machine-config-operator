@@ -6,13 +6,12 @@
 # Example:
 # Run: bash ./hack/community/generate.sh WMCO_VERSION OUTPUT_DIR
 
-# Extract major version from WMCO_VERSION and map to ocp version.
+# Get the correct OCP version and prepend with 'community-'
 get_co_version() {
-  local COMMUNITY_VER_MAJOR=4
-  local CONSTANT_VER=5
-  local OCP_VER=${WMCO_VERSION:0:1}
-  local COMMUNITY_VER_MINOR=$(($CONSTANT_VER+$OCP_VER))
-  local COMMUNITY_VER=community-${COMMUNITY_VER_MAJOR}-${COMMUNITY_VER_MINOR}
+  source hack/common.sh
+  OCP_VER=$(get_OCP_version "$WMCO_VERSION")
+  COMMUNITY_VER=$(echo $OCP_VER)
+  echo community-$COMMUNITY_VER
 }
 
 # Replace necessary fields with the yq tool.
